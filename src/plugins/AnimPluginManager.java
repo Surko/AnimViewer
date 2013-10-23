@@ -29,7 +29,8 @@ public class AnimPluginManager {
     }
     
     public AnimPlugin addPlugin(File file) {
-        try {            
+        try {
+            System.out.println(file.toURI().toURL());
             URLClassLoader authorizedLoader = URLClassLoader.newInstance(new URL[] { file.toURI().toURL()}); 
             AnimPlugin plugin = (AnimPlugin)authorizedLoader.loadClass(
                     animviewer.AnimViewer.prop.getProperty("mainClassName",mainClassName)).newInstance();

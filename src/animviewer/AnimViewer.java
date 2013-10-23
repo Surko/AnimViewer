@@ -59,14 +59,14 @@ public class AnimViewer {
     private static final String newVersionTitle = "New version available";
     private static final String noConnection = "Connection was interrupted";
     
-    private static final String versionFormat = "%s - version %d by Surko";
+    private static final String versionFormat = "%s - version %s by Surko";
     
     private static final String app_version = "app_version";
     
     public static Properties prop;
     public static AnimPluginManager plugManager;
     public static AnimPlugin activePlugin;    
-    public static int version;
+    public static String version;
     
     public static boolean stopped = true;
     public static boolean paused = true;
@@ -139,21 +139,21 @@ public class AnimViewer {
         
         prop = new Properties();
         try {
-            InputStream propIn = new FileInputStream("properties/viewer.properties");  
+            InputStream propIn = new FileInputStream("properties/viewer.properties");             
             prop.load(propIn);
-        } catch(Exception e) {
+        } catch(Exception e) {            
             LOG.log(Level.WARNING, noPropErr);
         }
         plugManager = new AnimPluginManager();
         
         w = Integer.parseInt(prop.getProperty("app_width", defW));
         h = Integer.parseInt(prop.getProperty("app_height", defH));
-        version = Integer.parseInt(prop.getProperty(app_version,"0"));
+        version = prop.getProperty(app_version,"0");
         
         JFrame.setDefaultLookAndFeelDecorated(true);
         animViewerFrame = new JFrame(String.format(versionFormat,prop.getProperty("app_name", defName), version));        
-        animViewerFrame.setDefaultCloseOperation(JFrame.EXIT_ON_CLOSE);        
-        animViewerFrame.setPreferredSize(new Dimension(w, h));                
+        animViewerFrame.setDefaultCloseOperation(JFrame.EXIT_ON_CLOSE);
+        animViewerFrame.setPreferredSize(new Dimension(w, h));
                         
         initMenuBar(); 
         initToolbar();
@@ -248,16 +248,17 @@ public class AnimViewer {
 
             @Override
             public void actionPerformed(ActionEvent e) {                
-                Updater update = new Updater(prop);  
+                Updater updater = new Updater(prop);  
                 try {
-                    if (update.getLatestVersion() == version) {
+                    if (updater.getLatestVersion().equals(version)) {
                         JOptionPane.showMessageDialog(animViewerFrame, uptoDate);
                     } else {
                         int answer = JOptionPane.showConfirmDialog(animViewerFrame, newVersion,newVersionTitle,JOptionPane.YES_NO_OPTION);
-                        if (answer == 0) {
+                        if (answer == -1) {
                             return;
                         } else {
-                            animText.append("Downloading");
+                            animText.append("Downloading... \n");
+                            System.out.println(updater.getAllReleases());
                         }
                     }
                 } catch (Exception ex) {
