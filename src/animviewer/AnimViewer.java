@@ -29,6 +29,7 @@ import javax.swing.JList;
 import javax.swing.JMenu;
 import javax.swing.JMenuBar;
 import javax.swing.JMenuItem;
+import javax.swing.JOptionPane;
 import javax.swing.JPanel;
 import javax.swing.JScrollPane;
 import javax.swing.JSeparator;
@@ -38,6 +39,7 @@ import javax.swing.JToolBar;
 import javax.swing.UIManager;
 import javax.swing.filechooser.FileNameExtensionFilter;
 import plugins.AnimPluginManager;
+import updater.Updater;
 
 /**
  *
@@ -52,10 +54,19 @@ public class AnimViewer {
     private static final String noPropErr = "Could not find property file with config --> default values used";
     private static final String noLookErr = "We cannot set %s look for the app";    
     private static final String infoRemove = "List of loaded plugins were resetted\n";
+    private static final String uptoDate = "Your app is up-to date";
+    private static final String newVersion = "New version is available. Do you want to download?";
+    private static final String newVersionTitle = "New version available";
+    private static final String noConnection = "Connection was interrupted";
+    
+    private static final String versionFormat = "%s - version %d by Surko";
+    
+    private static final String app_version = "app_version";
     
     public static Properties prop;
     public static AnimPluginManager plugManager;
-    public static AnimPlugin activePlugin;
+    public static AnimPlugin activePlugin;    
+    public static int version;
     
     public static boolean stopped = true;
     public static boolean paused = true;
@@ -137,9 +148,10 @@ public class AnimViewer {
         
         w = Integer.parseInt(prop.getProperty("app_width", defW));
         h = Integer.parseInt(prop.getProperty("app_height", defH));
+        version = Integer.parseInt(prop.getProperty(app_version,"0"));
         
         JFrame.setDefaultLookAndFeelDecorated(true);
-        animViewerFrame = new JFrame(prop.getProperty("app_name", defName));        
+        animViewerFrame = new JFrame(String.format(versionFormat,prop.getProperty("app_name", defName), version));        
         animViewerFrame.setDefaultCloseOperation(JFrame.EXIT_ON_CLOSE);        
         animViewerFrame.setPreferredSize(new Dimension(w, h));                
                         
@@ -232,6 +244,28 @@ public class AnimViewer {
         // Vytvorene nove menu
         menu = new JMenu("Help");
         item = new JMenuItem("Check for Updates");
+        item.addActionListener(new ActionListener() {
+
+            @Override
+            public void actionPerformed(ActionEvent e) {                
+                Updater update = new Updater(prop);  
+                try {
+                    if (update.getLatestVersion() == version) {
+                        JOptionPane.showMessageDialog(animViewerFrame, uptoDate);
+                    } else {
+                        int answer = JOptionPane.showConfirmDialog(animViewerFrame, newVersion,newVersionTitle,JOptionPane.YES_NO_OPTION);
+                        if (answer == 0) {
+                            return;
+                        } else {
+                            animText.append("Downloading");
+                        }
+                    }
+                } catch (Exception ex) {
+                    JOptionPane.showMessageDialog(animViewerFrame, noConnection);
+                    animText.append(noConnection);
+                }
+            }
+        });
         menu.add(item);
         
         // Pridanie help okna do menu baru
