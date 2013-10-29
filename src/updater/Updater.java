@@ -5,9 +5,14 @@
 package updater;
 
 import animviewer.AnimViewer;
+import java.io.BufferedOutputStream;
 import java.io.BufferedReader;
+import java.io.File;
+import java.io.FileOutputStream;
+import java.io.InputStream;
 import java.io.InputStreamReader;
 import java.net.URL;
+import java.net.URLConnection;
 import java.util.HashMap;
 import java.util.Map;
 import java.util.Properties;
@@ -118,6 +123,44 @@ public class Updater implements Runnable {
         }    
         return hist;        
     }
+    
+    public boolean download(String version) {
+        String[] links = serverLinks.split(delim);
+        for (String link : links) {
+            File fOut = getRawFile(link + version + "/AnimViewer.jar");
+            if (fOut != null) {                                
+                return true;
+            }
+        }
+        
+        return false;
+    }
+    
+    private File getRawFile(String link) {
+        try {
+            URL url = new URL(link);
+            URLConnection connection = url.openConnection();
+            InputStream is = connection.getInputStream();
+            long max = connection.getContentLength();
+            AnimViewer.animText.append("Update size: " + max + " bytes\n");
+            File fOut = new File("update.jar");
+            BufferedOutputStream bos = new BufferedOutputStream(new FileOutputStream(fOut));            
+            byte[] buffer = new byte[32 * 1024];
+            int bytes;
+            int in = 0;
+            while ((bytes = is.read(buffer))!= -1) {
+                in += bytes;
+                bos.write(buffer, 0, bytes);                            
+            }
+            bos.flush();
+            bos.close();
+            is.close();
+            AnimViewer.animText.append("Download complete \n");
+            return fOut;
+        } catch (Exception ex) {
+            return null;
+        }
+    }   
     
     private String getInfoData(String link) throws Exception {        
         

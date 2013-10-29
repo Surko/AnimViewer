@@ -71,4 +71,21 @@
     nbproject/build-impl.xml file. 
 
     -->
+    
+    <target name="-pre-jar">
+     <mkdir dir="build/classes/resources"/>
+     <mkdir dir="build/classes/properties"/>
+     <copy todir="build/classes/resources">
+         <fileset dir="${basedir}/resources" />
+     </copy>     
+     <copy todir="build/classes/properties">
+         <fileset dir="${basedir}/properties" />
+     </copy>
+    </target>
+    
+    <target name="-post-jar">
+    <copy todir="dist">
+         <fileset dir="${basedir}/root" includes="*.*" />
+     </copy>
+     </target>
 </project>
