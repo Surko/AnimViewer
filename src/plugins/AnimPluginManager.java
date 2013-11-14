@@ -33,9 +33,9 @@ public class AnimPluginManager {
     
     public AnimPlugin addPlugin(File file) {
         try {            
-            URLClassLoader authorizedLoader = URLClassLoader.newInstance(new URL[] { file.toURI().toURL()}); 
+            URLClassLoader authorizedLoader = URLClassLoader.newInstance(new URL[] { file.toURI().toURL()});             
             AnimPlugin plugin = (AnimPlugin)authorizedLoader.loadClass(
-                    animviewer.AnimViewer.prop.getProperty("mainClassName",mainClassName)).newInstance();
+                    file.getName().toLowerCase().replace("jar","") + animviewer.AnimViewer.prop.getProperty("mainClassName",mainClassName)).newInstance();            
             animPlugins.add(plugin);
             return plugin;
         } catch (Exception e) {

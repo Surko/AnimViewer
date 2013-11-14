@@ -63,6 +63,7 @@ import javax.swing.table.DefaultTableModel;
 import javax.swing.tree.DefaultMutableTreeNode;
 import javax.swing.tree.DefaultTreeModel;
 import javax.swing.tree.MutableTreeNode;
+import javax.swing.tree.TreePath;
 import plugins.AnimPluginManager;
 import updater.Updater;
 
@@ -90,11 +91,14 @@ public class AnimViewer {
     
     public static Properties prop;
     public static AnimPluginManager plugManager;
-    public static AnimPlugin activePlugin;    
+    public static AnimPlugin activePlugin; 
+    public static AnimPlugin selectedPlugin;
     public static String version;
     
-    public static boolean stopped = true;
-    public static boolean paused = true;
+    public static int animState = 0;
+    public static final int START = 1;
+    public static final int STOP = 0;
+    public static final int PAUSE = 2;
     
     public static int fpsMin = 0,fpsMax = 30,fpsInit = 0;
     public static int w,h;
@@ -241,8 +245,9 @@ public class AnimViewer {
                 
                 if (retValue == JFileChooser.APPROVE_OPTION) {
                     DefaultTreeModel model = (DefaultTreeModel) animList.getModel();                    
-                    model.insertNodeInto(rootNode, new DefaultMutableTreeNode(plugManager.addPlugin(chooser.getSelectedFile())),
+                    model.insertNodeInto(new DefaultMutableTreeNode(plugManager.addPlugin(chooser.getSelectedFile())),rootNode,
                             model.getChildCount(rootNode));
+                    model.reload();
                 }
             }
         });
@@ -292,8 +297,7 @@ public class AnimViewer {
                         if (answer == -1) {
                             return;
                         } else {
-                            animText.append("Downloading... \n");
-                            
+                            animText.append("Downloading... \n");                            
                         }
                     }
                 } catch (Exception ex) {
@@ -410,19 +414,77 @@ public class AnimViewer {
             URL url = AnimViewer.class.getResource("/resources/play.png");                
             Image icon = new BufferedImage(32,32,BufferedImage.TYPE_INT_ARGB);
             icon.getGraphics().drawImage(ImageIO.read(url).getScaledInstance(32, 32, Image.SCALE_DEFAULT),0,0,null);                        
-            btn = new RoundButton(icon);            
+            btn = new RoundButton(icon);   
+            btn.addActionListener(new ActionListener() {
+
+                @Override
+                public void actionPerformed(ActionEvent e) {
+                    switch (animState) {
+                        case PAUSE :
+                            animText.append(" Animation resumes \n");
+                            animState = START;  
+                            break;
+                        case STOP :                             
+                            // Testovanie na oznacenie animacie
+                            if (selectedPlugin != null && activePlugin == null) {                                                                
+                                animState = START;
+                                activePlugin = selectedPlugin;                                     
+                                Thread t = new Thread(activePlugin);
+                                t.start();
+                                animText.append(" Animation started  \n");
+                                return;
+                            }                           
+                            if (selectedPlugin == null) {
+                                animText.append(" There is no selected animation to run \n");
+                            }
+                            break;
+                        case START :
+                            animText.append(" Animation is already running. To change it please select another one \n");
+                            break;
+                    }                                      
+                }
+            });
             animToolbar.add(btn);
             // Pause Button
             url = AnimViewer.class.getResource("/resources/pause.png");
             icon = new BufferedImage(32,32,BufferedImage.TYPE_INT_ARGB);
             icon.getGraphics().drawImage(ImageIO.read(url).getScaledInstance(32, 32, Image.SCALE_DEFAULT),0,0,null);                        
-            btn = new RoundButton(icon);            
+            btn = new RoundButton(icon);     
+            btn.addActionListener(new ActionListener() {
+
+                @Override
+                public void actionPerformed(ActionEvent e) {
+                    if (animState == START) {
+                        animText.append(" Animation was paused \n");
+                        animState = PAUSE;
+                    } else {
+                        animText.append(" Animation has to run to pause it \n");
+                    }  
+                }
+            });
             animToolbar.add(btn);
             // Stop button
             url = AnimViewer.class.getResource("/resources/stop.png");
             icon = new BufferedImage(32,32,BufferedImage.TYPE_INT_ARGB);
             icon.getGraphics().drawImage(ImageIO.read(url).getScaledInstance(32, 32, Image.SCALE_DEFAULT),0,0,null);                        
-            btn = new RoundButton(icon);            
+            btn = new RoundButton(icon); 
+            btn.addActionListener(new ActionListener() {
+
+                @Override
+                public void actionPerformed(ActionEvent e) {
+                    if (animState != STOP) {
+                        animText.append(" Animation is halting \n");  
+                        animState = STOP;
+                        if (activePlugin != null) {
+                            activePlugin.exit();
+                        }
+                        activePlugin = null;
+                        animText.append(" Animation was stopped \n");                        
+                    } else {
+                        animText.append(" Animation has to run to stop it\n");
+                    }                
+                }
+            });
             animToolbar.add(btn);
         } catch (IOException ex) {
             Logger.getLogger(AnimViewer.class.getName()).log(Level.SEVERE, null, ex);
@@ -437,6 +499,25 @@ public class AnimViewer {
     
     private static void initList() {
         animList = new JTree();        
+        animList.addMouseListener(new MouseAdapter() {
+
+            @Override
+            public void mouseClicked(MouseEvent e) {
+                TreePath tp = animList.getPathForLocation(e.getX(), e.getY());
+                if (tp == null) {
+                    animList.clearSelection();
+                    animPanel.removeAll();
+                    animPanel.updateUI();
+                    return;
+                }
+                if (tp.getLastPathComponent() != rootNode) {
+                    selectedPlugin = (AnimPlugin) ((DefaultMutableTreeNode) tp.getLastPathComponent()).getUserObject();
+                    selectedPlugin.setPanel(animPanel);
+                    animPanel.updateUI();
+                }
+            }
+            
+        });
         DefaultTreeModel animModel = new DefaultTreeModel(rootNode);        
         animList.setModel(animModel);        
         animScrollList = new JScrollPane(animList,JScrollPane.VERTICAL_SCROLLBAR_ALWAYS,JScrollPane.HORIZONTAL_SCROLLBAR_NEVER);
