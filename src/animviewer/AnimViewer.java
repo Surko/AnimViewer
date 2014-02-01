@@ -511,6 +511,7 @@ public class AnimViewer {
                     return;
                 }
                 if (tp.getLastPathComponent() != rootNode) {
+                    animPanel.removeAll();
                     selectedPlugin = (AnimPlugin) ((DefaultMutableTreeNode) tp.getLastPathComponent()).getUserObject();
                     selectedPlugin.setPanel(animPanel);
                     animPanel.updateUI();

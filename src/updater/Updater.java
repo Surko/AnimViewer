@@ -164,7 +164,7 @@ public class Updater implements Runnable {
     
     private String getInfoData(String link) throws Exception {        
         
-        URL url = new URL(link+"\\version.html");
+        URL url = new URL(link+"/version.html");
 
         BufferedReader html = new BufferedReader(new InputStreamReader(url.openStream()));                
         StringBuilder buffer = new StringBuilder();
