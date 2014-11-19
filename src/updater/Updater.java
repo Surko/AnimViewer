@@ -127,7 +127,7 @@ public class Updater implements Runnable {
     public boolean download(String version) {
         String[] links = serverLinks.split(delim);
         for (String link : links) {
-            File fOut = getRawFile(link + version + "/AnimViewer.jar");
+            File fOut = getRawFile(link + "/" + version + "/AnimViewer.jar");
             if (fOut != null) {                                
                 return true;
             }
@@ -169,7 +169,10 @@ public class Updater implements Runnable {
         BufferedReader html = new BufferedReader(new InputStreamReader(url.openStream()));                
         StringBuilder buffer = new StringBuilder();
         String line;                
-        while ((line = html.readLine())!=null) {            
+        while ((line = html.readLine())!=null) {  
+            if (line.equals("/n")) {
+                continue;
+            }            
             buffer.append(line);
             buffer.append("\n");
         }                
